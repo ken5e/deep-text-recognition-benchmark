@@ -23,7 +23,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def train(opt):
   """ dataset preparation """
   if opt.char_list:
-    opt.character = Path(opt.char_list)
+    opt.character = Path(opt.char_list).read_text()
 
   if not opt.data_filtering_off:
       print('Filtering the images containing characters which are not in opt.character')
@@ -85,7 +85,16 @@ def train(opt):
   if opt.saved_model != '':
       print(f'loading pretrained model from {opt.saved_model}')
       if opt.FT:
+        try:
           model.load_state_dict(torch.load(opt.saved_model), strict=False)
+        except Exception as e:
+          print(e)
+          old_model = torch.load(opt.saved_model)
+          print(old_model.keys())
+          del old_model["module.Prediction.attention_cell.rnn.weight_ih"]
+          del old_model["module.Prediction.generator.weight"]
+          del old_model["module.Prediction.generator.bias"]
+          model.load_state_dict(old_model, strict=False)
       else:
           model.load_state_dict(torch.load(opt.saved_model))
   print("Model:")
@@ -107,9 +116,14 @@ def train(opt):
   # filter that only require gradient decent
   filtered_parameters = []
   params_num = []
-  for p in filter(lambda p: p.requires_grad, model.parameters()):
+  for name, p in filter((lambda x: x[1].requires_grad), model.named_parameters()):
+    if not opt.freeze:
       filtered_parameters.append(p)
       params_num.append(np.prod(p.size()))
+    else:
+      if name in ["module.Prediction.attention_cell.rnn.weight_ih", "module.Prediction.generator.weight", "module.Prediction.generator.bias"]:
+        filtered_parameters.append(p)
+        params_num.append(np.prod(p.size()))
   print('Trainable params num : ', sum(params_num))
   # [print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
@@ -278,6 +292,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_channel', type=int, default=512,
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
+    parser.add_argument('--freeze', action='store_true', help='freeze all parts except out layer')
 
     opt = parser.parse_args()
 
