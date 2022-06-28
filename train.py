@@ -196,7 +196,7 @@ def train(opt):
           with open(f'./saved_models/{opt.exp_name}/log_train.txt', 'a') as log:
               model.eval()
               with torch.no_grad():
-                  valid_loss, current_accuracy, current_norm_ED, preds, confidence_score, labels, infer_time, length_of_data, current_cer_score = validation(
+                  valid_loss, current_accuracy, current_norm_ED, preds, confidence_score, labels, infer_time, length_of_data = validation(
                       model, criterion, valid_loader, converter, opt)
               model.train()
 
@@ -216,11 +216,8 @@ def train(opt):
               best_model_log = f'{"Best_accuracy":17s}: {best_accuracy:0.3f}, {"Best_norm_ED":17s}: {best_norm_ED:0.2f}'
 
               loss_model_log = f'{loss_log}\n{current_model_log}\n{best_model_log}'
-              cer_log = f"current cer score {current_cer_score}"
               print(loss_model_log)
-              print(cer_log)
               log.write(loss_model_log + '\n')
-              log.write(cer_log + '\n')
 
               # show some predicted results
               dashed_line = '-' * 80
