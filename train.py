@@ -196,15 +196,14 @@ def train(opt):
           with open(f'./saved_models/{opt.exp_name}/log_train.txt', 'a') as log:
               model.eval()
               with torch.no_grad():
-                  valid_loss, current_accuracy, current_norm_ED, preds, confidence_score, labels, infer_time, length_of_data = validation(
+                  valid_loss, current_accuracy, current_norm_ED, preds, confidence_score, labels, infer_time, length_of_data, avg_cer_score = validation(
                       model, criterion, valid_loader, converter, opt)
               model.train()
 
               # training loss and validation loss
               loss_log = f'[{iteration+1}/{opt.num_iter}] Train loss: {loss_avg.val():0.5f}, Valid loss: {valid_loss:0.5f}, Elapsed_time: {elapsed_time:0.5f}'
               loss_avg.reset()
-
-              current_model_log = f'{"Current_accuracy":17s}: {current_accuracy:0.3f}, {"Current_norm_ED":17s}: {current_norm_ED:0.2f}'
+              current_model_log = f'{"Current_accuracy":17s}: {current_accuracy:0.3f}, {"Current_norm_ED":17s}: {current_norm_ED:0.2f} {"avg_cer_score":17s}: {avg_cer_score:0.5f}'
 
               # keep best accuracy model (on valid dataset)
               if current_accuracy > best_accuracy:
